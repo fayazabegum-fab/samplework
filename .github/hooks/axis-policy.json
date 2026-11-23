@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "command -v axis >/dev/null 2>&1 || { echo 'axis is not installed on this machine, and this repo has a policy hook that needs it.' >&2; echo '  run: gcloud auth login' >&2; echo '  then: curl -fsSL https://axis.egen.dev/install.sh | sh' >&2; exit 2; }; axis guard --target copilot",
+        "matcher": "Bash|Write|Edit|MultiEdit|NotebookEdit",
+        "timeoutSec": 30
+      }
+    ]
+  }
+}

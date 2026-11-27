@@ -1,0 +1,1 @@
+"""BigQuery raw-message writing."""

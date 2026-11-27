@@ -1,0 +1,10 @@
+environment: test
+project_id: replace-with-gcp-project-id
+region: us-central1
+pipelines:
+  - name: sample
+    topic: raw-sample-test
+    subscription: raw-sample-test-sub
+    dataset: raw_test
+    table: sample_messages
+    schema_ref: sql/tables/raw_message.sql

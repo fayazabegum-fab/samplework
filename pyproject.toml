@@ -1,0 +1,33 @@
+[project]
+name = "pubsub-bigquery-accelerator"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "google-cloud-bigquery>=3.42,<4",
+    "google-cloud-pubsub>=2.39,<3",
+    "PyYAML>=6,<7",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8,<9",
+    "ruff>=0.14,<1",
+]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests/unit"]
+addopts = "-ra"
+markers = [
+    "integration: requires a configured non-production GCP project",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

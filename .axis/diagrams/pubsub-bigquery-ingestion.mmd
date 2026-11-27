@@ -1,0 +1,49 @@
+%% Source revision: 151a55bba9545ade491dd505e2d81f6378088e73
+C4Container
+title Raw Pub/Sub-to-BigQuery ingestion
+
+System_Boundary(repo, "REPOSITORY CONFIG & TOOLS") {
+  Container(config, "Environment YAML", "config/*.yaml", "Defines the GCP project, region, topics, subscriptions, datasets, and tables")
+  Container(terraform, "Terraform", "Terraform modules", "Creates Pub/Sub resources, BigQuery datasets, the ingestion service account, and IAM grants")
+  Container(ddl, "DDL runner", "scripts/apply_ddl.py", "Executes sql/tables/raw_message.sql with configured table identifiers")
+}
+
+System_Boundary(runtime, "WORKER RUNTIME ?") {
+  Container(worker, "Python ingestion worker", "Python 3.12", "Uses StreamingPull and writes raw payload bytes with message metadata. Runtime host and identity attachment are not provisioned by this repository.")
+}
+
+System_Boundary(gcp, "GOOGLE CLOUD PROJECT") {
+  Container(topic, "Pub/Sub topic", "Google Cloud Pub/Sub", "Topic name comes from the environment profile")
+  Container(subscription, "Pub/Sub subscription", "Google Cloud Pub/Sub pull subscription", "Created for the configured topic")
+  Container(ingestion_identity, "Ingestion service account", "Google Cloud IAM", "Created by Terraform")
+  ContainerDb(dataset, "BigQuery raw dataset", "Google BigQuery", "Created by Terraform")
+  ContainerDb(table, "Raw message table", "BigQuery SQL DDL", "BYTES payload, message ID, publish time, attributes, and ingestion time; partitioned by ingestion date")
+}
+
+Rel(config, terraform, "Supplies environment resource settings")
+Rel(config, worker, "Selects project, region, subscription, and table")
+Rel(config, ddl, "Selects project, dataset, table, and schema reference")
+Rel(terraform, topic, "Creates")
+Rel(terraform, subscription, "Creates")
+Rel(terraform, ingestion_identity, "Creates")
+Rel(terraform, dataset, "Creates")
+Rel(topic, subscription, "Routes topic messages")
+Rel(subscription, worker, "StreamingPull; at-least-once; ack after insert success, nack on write failure")
+Rel(worker, table, "BigQuery streaming insert; unchanged payload bytes and metadata; no deduplication")
+Rel(ddl, table, "Creates table from the checked-in SQL")
+Rel(dataset, table, "Contains")
+Rel(ingestion_identity, subscription, "roles/pubsub.subscriber")
+Rel(ingestion_identity, dataset, "roles/bigquery.dataEditor")
+
+UpdateElementStyle(config, $bgColor="#dae8fc", $fontColor="#1f1f1f", $borderColor="#6c8ebf")
+UpdateElementStyle(terraform, $bgColor="#dae8fc", $fontColor="#1f1f1f", $borderColor="#6c8ebf")
+UpdateElementStyle(ddl, $bgColor="#dae8fc", $fontColor="#1f1f1f", $borderColor="#6c8ebf")
+UpdateElementStyle(worker, $bgColor="#d5e8d4", $fontColor="#1f1f1f", $borderColor="#82b366")
+UpdateElementStyle(topic, $bgColor="#fff2cc", $fontColor="#1f1f1f", $borderColor="#d6b656")
+UpdateElementStyle(subscription, $bgColor="#fff2cc", $fontColor="#1f1f1f", $borderColor="#d6b656")
+UpdateElementStyle(ingestion_identity, $bgColor="#e1d5e7", $fontColor="#1f1f1f", $borderColor="#9673a6")
+UpdateElementStyle(dataset, $bgColor="#d5e8d4", $fontColor="#1f1f1f", $borderColor="#82b366")
+UpdateElementStyle(table, $bgColor="#d5e8d4", $fontColor="#1f1f1f", $borderColor="#82b366")
+Container(legend, "Diagram legend", "Visual key", "Blue: repository tools; teal: worker; amber: Pub/Sub; green: BigQuery; purple: IAM. Solid arrows: data or provisioning flow. Dashed arrows: permission or containment. Dashed boundaries: grouping.")
+UpdateElementStyle(legend, $bgColor="#ffffff", $fontColor="#333333", $borderColor="#999999")
+
